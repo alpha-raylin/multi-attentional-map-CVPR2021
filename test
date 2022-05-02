@@ -1,0 +1,39 @@
+[1mNAME[0m
+    main.py
+
+[1mSYNOPSIS[0m
+    main.py [4mGROUP[0m | [4mCOMMAND[0m
+
+[1mGROUPS[0m
+    [1m[4mGROUP[0m[0m is one of the following:
+
+     argparse
+       Command-line parsing library
+
+     fire
+       The Python Fire module.
+
+     torch
+       The torch package contains data structures for multi-dimensional tensors and defines mathematical operations over these tensors. Additionally, it provides many utilities for efficient serializing of Tensors and arbitrary types, and other useful utilities.
+
+     subprocess
+       Subprocesses with accessible I/O streams
+
+[1mCOMMANDS[0m
+    [1m[4mCOMMAND[0m[0m is one of the following:
+
+     train_config
+
+     distributed_train
+
+     main_worker
+
+     all_eval
+
+     pretrain
+
+     aexp
+
+     resume
+
+     test
