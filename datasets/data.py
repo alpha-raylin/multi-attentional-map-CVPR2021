@@ -3,7 +3,9 @@ import json
 import random
 dfdcroot=''
 celebroot='../../Celeb_img/Celeb_img/' 
-ffpproot='../data-x/g15/ffpp-faces/'
+ffpproot='../../data-x/g15/ffpp-faces/'
+jpegroot='../../data-x/g15/ffpp-faces/'
+
 deeperforensics_root=''
 def load_json(name):
     with open(name) as f:
@@ -47,8 +49,26 @@ def FF_dataset(tag='Origin',codec='c0',part='train'):
 
 Celeb_test=list(map(lambda x:[os.path.join(celebroot,x[0]),x[1]],load_json('celeb.json')))
 
-Celeb_test
-
+def jpeg_FF_dataset(tag='Origin',codec='c0',part='train'):
+    assert(tag in ['Origin','Deepfakes','NeuralTextures','FaceSwap','Face2Face','FaceShifter'])
+    assert(codec in ['c0','c23','c40','all'])
+    assert(part in ['train','val','test','all'])
+    if part=="all":
+        return jpeg_FF_dataset(tag,codec,'train')+jpeg_FF_dataset(tag,codec,'val')+jpeg_FF_dataset(tag,codec,'test')
+    if codec=='all':
+        return jpeg_FF_dataset(tag,'c0',part)+jpeg_FF_dataset(tag,'c23',part)+jpeg_FF_dataset(tag,'c40',part)
+    path=ffpproot+'%s/%s/jpeg_10_images/'%(tag,codec)
+    metafile=load_json(ffpproot+'ffpp/'+part+'.json')
+    files=[]
+    if tag=='Origin':
+        for i in metafile:
+            files.append([path+i[0],0])
+            files.append([path+i[1],0])
+    else:
+        for i in metafile:
+            files.append([path+i[0]+'_'+i[1],1])
+            files.append([path+i[1]+'_'+i[0],1])
+    return files
 
 def make_balance(data):
     tr=list(filter(lambda x:x[1]==0,data))

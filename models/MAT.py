@@ -322,6 +322,8 @@ class MAT(nn.Module):
         feature_matrix=F.hardswish(self.projection_local(feature_matrix))
         final=layers['final']
         attention_maps2=attention_maps.sum(dim=1,keepdim=True)
+
+        ### Global feature
         final=self.atp(final,attention_maps2,norm=1).squeeze(1)
         projected_final=F.hardswish(self.project_final(final))
         feature_matrix=torch.cat((feature_matrix,projected_final),1)

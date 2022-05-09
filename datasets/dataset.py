@@ -2,13 +2,13 @@ import os
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-from datasets.augmentations import augmentations
+from augmentations import augmentations
 from albumentations import CenterCrop,Compose,Resize,RandomCrop
 from albumentations.pytorch.transforms import ToTensor
 import json
 import random
 import cv2
-from datasets.data import *
+from data import *
 
 class DeepfakeDataset(Dataset):
 
@@ -27,6 +27,7 @@ class DeepfakeDataset(Dataset):
         else:
             self.min_frames=max_frames*0.3
         self.dataset=[]
+        self.jpeg_dataset=[]
         self.aug=augmentations[augment]
         resize_=(int(resize[0]/0.8),int(resize[1]/0.8))
         self.resize=resize
@@ -57,15 +58,29 @@ class DeepfakeDataset(Dataset):
         #     self.dataset=deeperforensics_dataset(phase)+FF_dataset('Origin',self.datalabel.split('-')[1],phase)
         # elif 'dfdc' in self.datalabel:
         #     self.dataset=dfdc_dataset(phase)
-        else: raise(Exception('no such datset'))    
+        else: raise(Exception('no such datset'))
+
+
+        ### jpeg dataset
+        if 'jpeg' in self.datalabel:
+            print('jpeg')
+            for i in ['Origin','Deepfakes','NeuralTextures','FaceSwap','Face2Face']:
+                self.jpeg_dataset+=jpeg_FF_dataset(i,self.datalabel.split('-')[2],phase)
+            if phase!='test':
+                self.jpeg_dataset=make_balance(self.jpeg_dataset)
+
 
     def next_epoch(self):
         self.epoch+=1
 
     def __getitem__(self, item):
         try:
+
+            ### original dataset
             vid=self.dataset[item//self.imgs_per_video]
             vd=sorted(os.listdir(vid[0]))
+
+            print('vid: ', vid)
             if len(vd)<self.min_frames:
                 print('<min_frame')
                 raise(Exception(str(vid)))
@@ -73,8 +88,30 @@ class DeepfakeDataset(Dataset):
             ind=vd[ind]
             image =cv2.imread(os.path.join(vid[0],ind))
             image=cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
             if self.phase=='train':
                 image=self.aug(image=image)['image']
+
+
+            ### jpeg dataset
+            if 'jpeg' in self.datalabel:
+                jpeg_vid=self.jpeg_dataset[item//self.imgs_per_video]
+                jpeg_vd=sorted(os.listdir(jpeg_vid[0]))
+
+                print('jpeg vid: ', jpeg_vid)
+                if len(jpeg_vd)<self.min_frames:
+                    print('<min_frame')
+                    raise(Exception(str(jpeg_vid)))
+                ind=(item%self.imgs_per_video*self.frame_interval+self.epoch)%min(len(jpeg_vd),self.max_frames)
+                ind=jpeg_vd[ind]
+                jpeg_image =cv2.imread(os.path.join(jpeg_vid[0],ind))
+                jpeg_image=cv2.cvtColor(jpeg_image, cv2.COLOR_BGR2RGB)
+
+                if self.phase=='train':
+                    jpeg_image=self.aug(image=jpeg_image)['image']
+                    return torch.stack((self.trans(image=image)['image'], self.trans(image=jpeg_image)['image'])), vid[1]
+
+                
             return self.trans(image=image)['image'], vid[1]
         except  Exception as e:
             print(e)
